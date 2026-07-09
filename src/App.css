@@ -1,0 +1,30 @@
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.status {
+  font-weight: 600;
+}
+
+.composer {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.composer input {
+  flex: 1;
+  padding: 0.5rem;
+}
+
+.composer button {
+  padding: 0.5rem 1rem;
+}
+
+.messages ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+}
