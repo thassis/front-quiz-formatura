@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./AdminDashboard.css";
 
 const OPTION_ICONS  = ["▲", "◆", "●", "■"];
@@ -15,11 +16,26 @@ export default function AdminDashboard({ gameState, onSend, connected }) {
     answeredCount = 0,
   } = gameState;
 
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [kickTarget, setKickTarget]     = useState(null); // nome do jogador a remover
+
   const isLobby    = phase === "lobby";
   const isQuestion = phase === "question";
   const isReveal   = phase === "answer_reveal";
   const isEnded    = phase === "ended";
   const isLastQ    = currentIndex + 1 >= totalQuestions;
+
+  const handleReset = () => {
+    if (!confirmReset) { setConfirmReset(true); return; }
+    onSend({ type: "reset_game" });
+    setConfirmReset(false);
+  };
+
+  const handleKick = (name) => {
+    if (kickTarget !== name) { setKickTarget(name); return; }
+    onSend({ type: "kick_player", name });
+    setKickTarget(null);
+  };
 
   return (
     <div className="admin-dashboard">
@@ -70,12 +86,33 @@ export default function AdminDashboard({ gameState, onSend, connected }) {
                     {(isQuestion || isReveal) && (
                       <span className={`status-dot ${p.answeredThisRound ? "" : "offline"}`} />
                     )}
+                    {/* Botão de kick com duplo clique */}
+                    <button
+                      className={`kick-btn ${kickTarget === p.name ? "kick-confirm" : ""}`}
+                      onClick={() => handleKick(p.name)}
+                      onBlur={() => setKickTarget(null)}
+                      title={kickTarget === p.name ? "Clique de novo para confirmar" : "Remover jogador"}
+                      disabled={!connected}
+                    >
+                      {kickTarget === p.name ? "✓?" : "✕"}
+                    </button>
                   </div>
                 </li>
               ))
             )}
           </ul>
         </div>
+
+        {/* Botão reiniciar — sempre visível */}
+        <button
+          id="btn-reset-game"
+          className={`btn btn-full ${confirmReset ? "btn-danger" : "btn-ghost"}`}
+          onClick={handleReset}
+          onBlur={() => setConfirmReset(false)}
+          disabled={!connected}
+        >
+          {confirmReset ? "⚠️ Confirmar reinício?" : "🔄 Reiniciar Jogo"}
+        </button>
       </aside>
 
       {/* Main */}
@@ -125,14 +162,7 @@ export default function AdminDashboard({ gameState, onSend, connected }) {
               </button>
             )}
             {isEnded && (
-              <button
-                id="btn-reset-game"
-                className="btn btn-ghost"
-                onClick={() => onSend({ type: "reset_game" })}
-                disabled={!connected}
-              >
-                🔄 Reiniciar
-              </button>
+              <p className="admin-ended-msg">🎉 Jogo encerrado! Use "Reiniciar Jogo" na barra lateral.</p>
             )}
           </div>
         </div>
@@ -204,7 +234,7 @@ export default function AdminDashboard({ gameState, onSend, connected }) {
 
         {isLobby && players.length === 0 && (
           <div className="admin-empty card">
-            <span style={{ fontSize: '3rem' }}>⏳</span>
+            <span style={{ fontSize: "3rem" }}>⏳</span>
             <p>Aguardando jogadores entrarem...</p>
             <p className="admin-empty-sub">Peça para eles acessarem a página principal.</p>
           </div>

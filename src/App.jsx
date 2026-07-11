@@ -118,6 +118,14 @@ export default function App() {
         setAppState("ended");
         break;
 
+      case "kicked":
+        localStorage.removeItem(SESSION_KEY);
+        setJoinError("Você foi removido pelo administrador.");
+        setAppState("join");
+        setPlayerName("");
+        setPlayerScore({ name: "", score: 0, lastPoints: 0, lastCorrect: false });
+        break;
+
       case "game_reset":
         localStorage.removeItem(SESSION_KEY);
         setAppState("join");
