@@ -6,20 +6,55 @@ import QuestionPage from "./pages/QuestionPage";
 import AnswerReveal from "./pages/AnswerReveal";
 import Leaderboard from "./pages/Leaderboard";
 
-const SESSION_KEY = "quiz_session_token";
+// ─── Cookie helpers ───────────────────────────────────────────────────────────
+// Cookies NÃO sincronizam entre dispositivos (ao contrário do localStorage
+// quando o Chrome Sync está ativo). São persistidos mesmo fechando o navegador.
+
+const COOKIE_NAME = "quiz_session";
+const COOKIE_HOURS = 24;
+
+function setCookie(value) {
+  const expires = new Date(Date.now() + COOKIE_HOURS * 3600 * 1000).toUTCString();
+  document.cookie = `${COOKIE_NAME}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Lax`;
+  // Limpa qualquer localStorage legado que possa causar conflito
+  localStorage.removeItem("quiz_session_token");
+}
+
+function getCookie() {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function clearCookie() {
+  document.cookie = `${COOKIE_NAME}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax`;
+  localStorage.removeItem("quiz_session_token"); // limpa legado também
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
 
 /*
  * appState:
- *   join         → entrada do jogador
  *   reconnecting → tentando rejoin automático
+ *   join         → entrada do jogador
  *   lobby        → sala de espera após entrar
  *   question     → pergunta ativa
  *   reveal       → resposta revelada
  *   ended        → placar final
  */
 
+function resetPlayerState(setAppState, setPlayerName, setPlayerScore, setPlayerCount, setCurrentQuestion, setRevealData, setHasAnswered) {
+  clearCookie();
+  setAppState("join");
+  setPlayerName("");
+  setPlayerScore({ name: "", score: 0, lastPoints: 0, lastCorrect: false });
+  setPlayerCount(0);
+  setCurrentQuestion(null);
+  setRevealData(null);
+  setHasAnswered(false);
+}
+
 export default function App() {
-  const [appState, setAppState]         = useState("reconnecting"); // começa tentando rejoin
+  const [appState, setAppState]         = useState("reconnecting");
   const [playerName, setPlayerName]     = useState("");
   const [playerScore, setPlayerScore]   = useState({ name: "", score: 0, lastPoints: 0, lastCorrect: false });
   const [joinError, setJoinError]       = useState("");
@@ -29,9 +64,13 @@ export default function App() {
   const [finalLeaderboard, setFinalLeaderboard] = useState([]);
   const [hasAnswered, setHasAnswered]   = useState(false);
 
-  // Tenta rejoin assim que conecta, se houver token salvo
+  const doReset = useCallback(() => {
+    resetPlayerState(setAppState, setPlayerName, setPlayerScore, setPlayerCount, setCurrentQuestion, setRevealData, setHasAnswered);
+  }, []);
+
+  // Tenta rejoin usando o cookie assim que conecta
   const tryRejoin = useCallback((send) => {
-    const token = localStorage.getItem(SESSION_KEY);
+    const token = getCookie();
     if (token) {
       send({ type: "rejoin", sessionToken: token });
     } else {
@@ -42,7 +81,6 @@ export default function App() {
   const handleMessage = useCallback((msg) => {
     switch (msg.type) {
       case "connected":
-        // Sempre tenta rejoin ao conectar/reconectar
         break;
 
       // ── Rejoin ──────────────────────────────────────────────
@@ -50,19 +88,17 @@ export default function App() {
         setPlayerName(msg.name);
         setPlayerScore(s => ({ ...s, name: msg.name, score: msg.score }));
         setJoinError("");
-        // O estado da tela vem logo depois via sendCurrentStateToPlayer
-        // mas garantimos pelo menos o lobby caso não venha nada
-        setAppState(msg.phase === "lobby" ? "lobby" : appState);
+        setAppState(msg.phase === "lobby" ? "lobby" : "reconnecting");
         break;
 
       case "rejoin_failed":
-        localStorage.removeItem(SESSION_KEY);
+        clearCookie();
         setAppState("join");
         break;
 
       // ── Join ─────────────────────────────────────────────────
       case "joined":
-        localStorage.setItem(SESSION_KEY, msg.sessionToken);
+        setCookie(msg.sessionToken);
         setAppState("lobby");
         setPlayerName(msg.name);
         setPlayerScore(s => ({ ...s, name: msg.name }));
@@ -118,34 +154,27 @@ export default function App() {
         setAppState("ended");
         break;
 
+      // ── Kick ─────────────────────────────────────────────────
       case "kicked":
-        localStorage.removeItem(SESSION_KEY);
+        clearCookie();
         setJoinError("Você foi removido pelo administrador.");
         setAppState("join");
         setPlayerName("");
         setPlayerScore({ name: "", score: 0, lastPoints: 0, lastCorrect: false });
         break;
 
+      // ── Reset ─────────────────────────────────────────────────
       case "game_reset":
-        localStorage.removeItem(SESSION_KEY);
-        setAppState("join");
-        setPlayerName("");
-        setPlayerScore({ name: "", score: 0, lastPoints: 0, lastCorrect: false });
-        setPlayerCount(0);
-        setCurrentQuestion(null);
-        setRevealData(null);
-        setHasAnswered(false);
+        doReset();
         break;
     }
-  }, [appState, playerName, playerScore.score]);
+  }, [appState, playerName, playerScore.score, doReset]);
 
   const { connected, send } = useWebSocket(handleMessage);
 
-  // Quando conecta pela primeira vez (ou reconecta), tenta rejoin
+  // Tenta rejoin a cada (re)conexão
   useEffect(() => {
-    if (connected) {
-      tryRejoin(send);
-    }
+    if (connected) tryRejoin(send);
   }, [connected]); // eslint-disable-line
 
   const handleJoin = (name) => {
