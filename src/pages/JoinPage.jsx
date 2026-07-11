@@ -18,6 +18,27 @@ export default function JoinPage({ onJoin, error, connected }) {
           <p className="join-subtitle">Entre na sala e boa sorte!</p>
         </div>
 
+        <div className="prizes-card">
+          <p className="prizes-title">🏆 Premiação</p>
+          <ul className="prizes-list">
+            <li className="prize-item prize-gold">
+              <span className="prize-medal">🥇</span>
+              <span className="prize-place">1º lugar</span>
+              <span className="prize-value">R$ 100 na Centauro</span>
+            </li>
+            <li className="prize-item prize-silver">
+              <span className="prize-medal">🥈</span>
+              <span className="prize-place">2º lugar</span>
+              <span className="prize-value">R$ 50 na Centauro</span>
+            </li>
+            <li className="prize-item prize-bronze">
+              <span className="prize-medal">🥉</span>
+              <span className="prize-place">3º lugar</span>
+              <span className="prize-value">R$ 20 na Centauro</span>
+            </li>
+          </ul>
+        </div>
+
         <div className="card join-card">
           <form onSubmit={handleSubmit} className="join-form">
             <label className="join-label" htmlFor="player-name">Seu nome</label>

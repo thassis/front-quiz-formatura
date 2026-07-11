@@ -1,3 +1,71 @@
+/* ─── Prizes ─────────────────────────────────────────────── */
+.prizes-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.25rem;
+}
+
+.prizes-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.prizes-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.prize-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+}
+
+.prize-gold {
+  background: linear-gradient(135deg, rgba(214,158,46,0.18), rgba(214,158,46,0.06));
+  border-color: rgba(214,158,46,0.35);
+}
+.prize-silver {
+  background: linear-gradient(135deg, rgba(160,174,192,0.18), rgba(160,174,192,0.06));
+  border-color: rgba(160,174,192,0.3);
+}
+.prize-bronze {
+  background: linear-gradient(135deg, rgba(180,100,60,0.18), rgba(180,100,60,0.06));
+  border-color: rgba(180,100,60,0.3);
+}
+
+.prize-medal { font-size: 1.3rem; flex-shrink: 0; }
+
+.prize-place {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 60px;
+}
+
+.prize-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text);
+  flex: 1;
+}
+
+.prize-gold   .prize-value { color: #e8c55a; }
+.prize-silver .prize-value { color: #a8b8cc; }
+.prize-bronze .prize-value { color: #c87c50; }
+
+/* ─── Hero ────────────────────────────────────────────────── */
 .join-hero {
   text-align: center;
   margin-bottom: 2rem;
