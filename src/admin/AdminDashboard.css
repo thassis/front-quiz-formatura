@@ -105,8 +105,27 @@
   font-size: 0.85rem;
 }
 .admin-player-name  { font-weight: 600; }
-.admin-player-right { display: flex; align-items: center; gap: 0.5rem; }
-.admin-player-score { font-weight: 800; color: var(--primary-glow); font-size: 0.8rem; }
+.admin-player-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-player-score {
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.admin-player-answer {
+  font-size: 0.8rem;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
 
 /* ─── Main ──────────────────────────────────────────────────── */
 .admin-main {

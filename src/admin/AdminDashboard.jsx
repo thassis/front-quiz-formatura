@@ -83,8 +83,13 @@ export default function AdminDashboard({ gameState, onSend, connected }) {
                   <span className="admin-player-name">{p.name}</span>
                   <div className="admin-player-right">
                     <span className="admin-player-score">{p.score}</span>
-                    {(isQuestion || isReveal) && (
-                      <span className={`status-dot ${p.answeredThisRound ? "" : "offline"}`} />
+                    {(isQuestion || isReveal) && p.answeredThisRound && p.answerIndex !== null && (
+                      <span className={`admin-player-answer opt-icon-${OPTION_COLORS[p.answerIndex]}`}>
+                        {OPTION_ICONS[p.answerIndex]}
+                      </span>
+                    )}
+                    {(isQuestion || isReveal) && !p.answeredThisRound && (
+                      <span className="status-dot offline" title="Aguardando resposta..." />
                     )}
                     {/* Botão de kick com duplo clique */}
                     <button
