@@ -1,0 +1,18 @@
+.admin-login-hero {
+  text-align: center;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.admin-login-sub {
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 500;
+}
+.admin-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}

@@ -1,0 +1,68 @@
+.join-hero {
+  text-align: center;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.join-hero .emoji-big {
+  animation: popIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+.join-title {
+  background: linear-gradient(135deg, #fff 30%, var(--primary-glow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+
+.join-subtitle {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.join-card {
+  background: var(--bg-card);
+}
+
+.join-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.join-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.join-error {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.3);
+  color: var(--error);
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.join-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.join-status-text {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
