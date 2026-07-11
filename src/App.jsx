@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useWebSocket } from "./hooks/useWebSocket";
 import JoinPage from "./pages/JoinPage";
 import WaitingRoom from "./pages/WaitingRoom";
@@ -6,17 +6,20 @@ import QuestionPage from "./pages/QuestionPage";
 import AnswerReveal from "./pages/AnswerReveal";
 import Leaderboard from "./pages/Leaderboard";
 
+const SESSION_KEY = "quiz_session_token";
+
 /*
- * Possible appStates:
- *   join       → entrada do jogador
- *   lobby      → sala de espera após entrar
- *   question   → pergunta ativa
- *   reveal     → resposta revelada
- *   ended      → placar final
+ * appState:
+ *   join         → entrada do jogador
+ *   reconnecting → tentando rejoin automático
+ *   lobby        → sala de espera após entrar
+ *   question     → pergunta ativa
+ *   reveal       → resposta revelada
+ *   ended        → placar final
  */
 
 export default function App() {
-  const [appState, setAppState] = useState("join");
+  const [appState, setAppState]         = useState("reconnecting"); // começa tentando rejoin
   const [playerName, setPlayerName]     = useState("");
   const [playerScore, setPlayerScore]   = useState({ name: "", score: 0, lastPoints: 0, lastCorrect: false });
   const [joinError, setJoinError]       = useState("");
@@ -26,12 +29,40 @@ export default function App() {
   const [finalLeaderboard, setFinalLeaderboard] = useState([]);
   const [hasAnswered, setHasAnswered]   = useState(false);
 
+  // Tenta rejoin assim que conecta, se houver token salvo
+  const tryRejoin = useCallback((send) => {
+    const token = localStorage.getItem(SESSION_KEY);
+    if (token) {
+      send({ type: "rejoin", sessionToken: token });
+    } else {
+      setAppState("join");
+    }
+  }, []);
+
   const handleMessage = useCallback((msg) => {
     switch (msg.type) {
       case "connected":
+        // Sempre tenta rejoin ao conectar/reconectar
         break;
 
+      // ── Rejoin ──────────────────────────────────────────────
+      case "rejoin_success":
+        setPlayerName(msg.name);
+        setPlayerScore(s => ({ ...s, name: msg.name, score: msg.score }));
+        setJoinError("");
+        // O estado da tela vem logo depois via sendCurrentStateToPlayer
+        // mas garantimos pelo menos o lobby caso não venha nada
+        setAppState(msg.phase === "lobby" ? "lobby" : appState);
+        break;
+
+      case "rejoin_failed":
+        localStorage.removeItem(SESSION_KEY);
+        setAppState("join");
+        break;
+
+      // ── Join ─────────────────────────────────────────────────
       case "joined":
+        localStorage.setItem(SESSION_KEY, msg.sessionToken);
         setAppState("lobby");
         setPlayerName(msg.name);
         setPlayerScore(s => ({ ...s, name: msg.name }));
@@ -39,16 +70,22 @@ export default function App() {
         break;
 
       case "error":
-        if (appState === "join") setJoinError(msg.message);
+        if (appState === "join" || appState === "reconnecting") {
+          setJoinError(msg.message);
+          setAppState("join");
+        }
         break;
 
+      // ── Lobby ────────────────────────────────────────────────
       case "lobby":
         setPlayerCount(msg.playerCount);
+        if (appState !== "lobby") setAppState("lobby");
         break;
 
+      // ── Pergunta ─────────────────────────────────────────────
       case "question":
         setCurrentQuestion(msg);
-        setHasAnswered(false);
+        setHasAnswered(msg.alreadyAnswered ?? false);
         setRevealData(null);
         setAppState("question");
         break;
@@ -57,30 +94,32 @@ export default function App() {
         setHasAnswered(true);
         break;
 
+      // ── Reveal ───────────────────────────────────────────────
       case "answer_reveal": {
         const myEntry = msg.leaderboard.find(e => e.name === playerName);
         const prevScore = playerScore.score;
         const newScore  = myEntry?.score ?? prevScore;
         const diff = newScore - prevScore;
-        const wasCorrect = diff > 0;
 
         setPlayerScore(s => ({
           ...s,
           score: newScore,
           lastPoints: diff,
-          lastCorrect: wasCorrect,
+          lastCorrect: diff > 0,
         }));
         setRevealData(msg);
         setAppState("reveal");
         break;
       }
 
+      // ── Fim ──────────────────────────────────────────────────
       case "game_ended":
         setFinalLeaderboard(msg.leaderboard);
         setAppState("ended");
         break;
 
       case "game_reset":
+        localStorage.removeItem(SESSION_KEY);
         setAppState("join");
         setPlayerName("");
         setPlayerScore({ name: "", score: 0, lastPoints: 0, lastCorrect: false });
@@ -94,6 +133,13 @@ export default function App() {
 
   const { connected, send } = useWebSocket(handleMessage);
 
+  // Quando conecta pela primeira vez (ou reconecta), tenta rejoin
+  useEffect(() => {
+    if (connected) {
+      tryRejoin(send);
+    }
+  }, [connected]); // eslint-disable-line
+
   const handleJoin = (name) => {
     setJoinError("");
     send({ type: "join", name });
@@ -103,7 +149,21 @@ export default function App() {
     send({ type: "answer", answerIndex });
   };
 
-  // Render
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  if (appState === "reconnecting") {
+    return (
+      <div className="page">
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+          <div className="spinner" />
+          <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>
+            {connected ? "Reconectando sessão..." : "Conectando ao servidor..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (appState === "join") {
     return <JoinPage onJoin={handleJoin} error={joinError} connected={connected} />;
   }
