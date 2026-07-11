@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: "/front-quiz-formatura/",
   build: {
+    outDir: "docs",
     rollupOptions: {
       input: {
         main: "./index.html",
